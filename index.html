@@ -13,9 +13,9 @@
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 0;
-    min-height: 100svh;   /* mejor que 100vh en móvil */
+    min-height: 100svh;
     height: auto;
-    overflow: auto;       /* permite scroll si hace falta */
+    overflow: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -37,18 +37,16 @@
   .frame-43{
     position: relative;
     width: min(100%, 720px);
-    aspect-ratio: 4 / 3;            /* 4:3 real */
+    aspect-ratio: 4 / 3;
     border-radius: clamp(16px, 4vw, 26px);
-    border: 5px solid #ad83b6;      /* marco único */
+    border: 5px solid #ad83b6;
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(151,134,99,.35), 0 0 20px #ad83b6, 0 0 40px #ffb3c1, 0 0 60px #ad83b6;
   }
-
   @supports not (aspect-ratio: 4/3){
     .frame-43::before{ content:""; display:block; padding-top:75%; }
   }
 
-  /* Dentro del marco: ocupar todo, SIN bordes propios */
   .frame-43 > video,
   .frame-43 > img{
     position: absolute; inset: 0;
@@ -56,7 +54,10 @@
     object-fit: cover;
     border: 0 !important; box-shadow: none !important;
   }
-  .frame-43 > img{ object-fit: contain; background: transparent; }
+  .frame-43 > img{
+    object-fit: contain;
+    background: transparent;
+  }
 
   /* Botones base */
   #btnsContainer {
@@ -89,29 +90,43 @@
     transform: scale(1.03);
     box-shadow: 0 10px 25px rgba(0,0,0,0.35);
   }
-  /* menos animación si el usuario lo prefiere */
+
   @media (prefers-reduced-motion: reduce){
     *{ animation: none !important; }
   }
-  @keyframes gradientBG { 0%{background-position:0 50%} 50%{background-position:100% 50%} 100%{background-position:0 50%} }
 
-  /* Grilla de miniaturas (opcional, para confirmar múltiples) */
+  @keyframes gradientBG {
+    0%{background-position:0 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0 50%}
+  }
+
+  /* Miniaturas */
   #thumbs{
     width: min(100%, 720px);
-    display: none;            /* visible solo cuando hay múltiples */
+    display: none;
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 8px;
     margin-top: 6px;
   }
-  #thumbs img{
+  #thumbs .thumb{
     width: 100%;
     aspect-ratio: 1/1;
-    object-fit: cover;
     border-radius: 10px;
     border: 2px solid #ad83b6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 12px;
+    background:#fff;
+    overflow:hidden;
+  }
+  #thumbs img{
+    width:100%;
+    height:100%;
+    object-fit: cover;
   }
 
-  /* En pantallas grandes, botones en hilera */
   @media (min-width: 768px){
     #btnsContainer{ flex-direction: row; }
     #btnsContainer button{ width: auto; }
@@ -121,13 +136,15 @@
 <body>
   <h2>¡Gracias por acompañarnos!</h2>
 
-  <!-- Marco 4:3 para video/preview -->
+  <!-- Marco 4:3 -->
   <div id="previewBox" class="frame-43">
+    <!-- este video lo usamos para cámara o para mostrar un video de la galería -->
     <video id="video" autoplay playsinline></video>
+    <!-- este img solo para fotos -->
     <img id="preview" />
   </div>
 
-  <!-- Rejilla de miniaturas (se mostrará si se eligen varias imágenes) -->
+  <!-- Miniaturas -->
   <div id="thumbs"></div>
 
   <div id="btnsContainer">
@@ -136,8 +153,8 @@
     <button id="galleryBtn">Subir desde galería</button>
   </div>
 
-  <!-- Input oculto para abrir la galería (ahora permite múltiples imágenes) -->
-  <input id="picker" type="file" accept="image/*, video/*" multiple style="display:none" />
+  <!-- Input oculto (ahora acepta imagen y video, y múltiples) -->
+  <input id="picker" type="file" accept="image/*,video/*" multiple style="display:none" />
 
   <canvas id="canvas" style="display:none;"></canvas>
 
@@ -156,22 +173,22 @@
   let stream;
   let useFront = true;
 
-  // Cola de archivos a subir (solo imágenes aquí)
-  // [{ filename, mime, data (base64), isVideo:false }, ...]
+  // Cola de archivos a subir
+  // { filename, mime, data, isVideo }
   let uploadQueue = [];
 
-  // Tu endpoint de Apps Script (usa /exec)
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyWbaYdgaJnBuHOPoNugywZczy6f0yRb-w0lZkb0Py4azb0qvQl5fCnKwB-ZS-wDStjAw/exec";
+  // Tu endpoint
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbxDKz3QJ8nVmrgRvwKOE66FOgV5CQoM55ZZHiYuXj3_MdrXtlw7Nk3ygMdFWhmKTotshA/exec";
 
   /* =========================
      Cámara
   ========================== */
   async function startCamera() {
-    // Limpiar video si venía de galería
-    if (video) {
-      video.removeAttribute('src');
-      if (typeof video.load === "function") video.load();
-    }
+    // Si había video de galería, lo limpiamos
+    video.removeAttribute("src");
+    video.removeAttribute("controls");
+    if (typeof video.load === "function") video.load();
+
     // Detener stream anterior
     if (stream) stream.getTracks().forEach(t => t.stop());
 
@@ -181,16 +198,17 @@
       });
     } catch (err) {
       console.error(err);
-      alert("No se pudo acceder a la cámara.");
+      alert("No se pudo acceder a la cámara. Puedes subir desde galería.");
+      renderInitialButtons();
       return;
     }
 
-    // Limpiar estado
+    // limpiar estado
     uploadQueue = [];
     thumbs.style.display = "none";
     thumbs.innerHTML = "";
 
-    // Mostrar cámara
+    // mostrar cámara
     video.srcObject = stream;
     video.style.display = "block";
     video.controls = false;
@@ -207,30 +225,40 @@
     `;
     document.getElementById("fotoBtn").onclick = takePhoto;
     document.getElementById("flipBtn").onclick = () => { useFront = !useFront; startCamera(); };
-    document.getElementById("galleryBtn").onclick = () => picker.click();
+    document.getElementById("galleryBtn").onclick = () => {
+      // reset para que deje elegir lo mismo
+      picker.value = "";
+      picker.click();
+    };
   }
 
-  async function takePhoto() {
+  function takePhoto() {
+    if (!video.videoWidth) {
+      alert("Espera un momento a que cargue la cámara.");
+      return;
+    }
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0);
     const imgData = canvas.toDataURL("image/png");
 
-    // Mostrar previsualización (la primera)
     preview.src = imgData;
     preview.style.display = "block";
     video.style.display = "none";
 
-    // Guardar en cola (siempre imagen)
-    uploadQueue = [{ filename: "foto.png", mime: "image/png", data: imgData, isVideo: false }];
+    uploadQueue = [{
+      filename: "foto.png",
+      mime: "image/png",
+      data: imgData,
+      isVideo: false
+    }];
 
     renderReviewButtons();
   }
 
   /* =========================
-     Galería múltiple
+     Galería (imágenes + videos)
   ========================== */
-  // Helper: leer como DataURL (promesa)
   function readFileAsDataURL(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -244,34 +272,47 @@
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    // Detener cámara si estaba activa
+    // detener cámara si estaba activa
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 
-    // Solo imágenes
-    const imageFiles = files.filter(f => f.type.startsWith("image/"));
-    if (!imageFiles.length) { alert("Selecciona imágenes, por favor."); e.target.value = ""; return; }
-
     try {
-      const dataURLs = await Promise.all(imageFiles.map(readFileAsDataURL));
-      uploadQueue = imageFiles.map((f, i) => ({
-        filename: f.name || `imagen_${i + 1}.png`,
-        mime: f.type || "image/png",
+      const dataURLs = await Promise.all(files.map(readFileAsDataURL));
+      uploadQueue = files.map((f, i) => ({
+        filename: f.name || `archivo_${i+1}`,
+        mime: f.type || "application/octet-stream",
         data: dataURLs[i],
-        isVideo: false
+        isVideo: f.type.startsWith("video/")
       }));
 
-      // Mostrar preview principal (primera imagen)
-      video.style.display = "none";
-      if (video) {
-        video.removeAttribute('src');
+      // mostrar preview del primero
+      const first = uploadQueue[0];
+      if (first.isVideo) {
+        // mostramos en el video
+        preview.style.display = "none";
+        video.style.display = "block";
+        video.srcObject = null;
+        video.src = first.data;
+        video.controls = true;
+        video.loop = true;
+        video.play().catch(()=>{});
+      } else {
+        // es imagen
+        video.style.display = "none";
+        video.removeAttribute("src");
         if (typeof video.load === "function") video.load();
+        preview.src = first.data;
+        preview.style.display = "block";
       }
-      preview.src = uploadQueue[0].data;
-      preview.style.display = "block";
 
-      // Mostrar miniaturas si hay varias
+      // miniaturas
       if (uploadQueue.length > 1) {
-        thumbs.innerHTML = uploadQueue.map(item => `<img src="${item.data}" alt="thumb">`).join("");
+        thumbs.innerHTML = uploadQueue.map(item => {
+          if (item.isVideo) {
+            return `<div class="thumb">🎥 ${item.filename}</div>`;
+          } else {
+            return `<div class="thumb"><img src="${item.data}" alt=""></div>`;
+          }
+        }).join("");
         thumbs.style.display = "grid";
       } else {
         thumbs.style.display = "none";
@@ -283,18 +324,17 @@
       console.error(err);
       alert("Ocurrió un error al leer los archivos.");
     } finally {
-      // permitir volver a elegir los mismos archivos
       e.target.value = "";
     }
   });
 
   function renderReviewButtons() {
     const count = uploadQueue.length;
-    const label = count > 1 ? `Subir ${count} imágenes` : 'Subir';
+    const label = count > 1 ? `Subir ${count} archivo(s)` : 'Subir';
     const retake = 'Cancelar / Volver a cámara';
 
     btnsContainer.innerHTML = `
-      <button id="uploadBtn">${label}</button>  
+      <button id="uploadBtn">${label}</button>
       <button id="retakeBtn">${retake}</button>
     `;
     document.getElementById("uploadBtn").onclick = uploadSelected;
@@ -302,47 +342,55 @@
   }
 
   /* =========================
-     Subida (simultánea)
+     Subida
   ========================== */
-  async function postOne(dataURL) {
-    // Intento normal (sin headers para evitar preflight)
+  async function postOne(item) {
+    const payload = {
+      file: item.data,    // base64 dataURL
+      name: item.filename,
+      type: item.mime,
+      isVideo: item.isVideo
+    };
+
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
-        body: JSON.stringify({ image: dataURL }) // tu doPost usa "image"
+        body: JSON.stringify(payload)
       });
-      // si CORS permite, lo contamos OK
       await res.text();
       return true;
-    } catch (_) {
-      // Fallback no-cors: no podremos leer la respuesta, pero sí se envía
+    } catch (err) {
+      // fallback
       try {
         await fetch(ENDPOINT, {
           method: "POST",
           mode: "no-cors",
-          body: JSON.stringify({ image: dataURL })
+          body: JSON.stringify(payload)
         });
         return true;
       } catch (e2) {
-        console.error("Fallo al enviar una imagen:", e2);
+        console.error("Fallo al enviar:", e2);
         return false;
       }
     }
   }
 
   async function uploadSelected() {
-    if (!uploadQueue.length) { alert("No hay imágenes para subir."); return; }
-
-    // Deshabilitar botón para evitar dobles clics
+    if (!uploadQueue.length) {
+      alert("No hay archivos para subir.");
+      return;
+    }
     const uploadBtn = document.getElementById("uploadBtn");
-    if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.textContent = "Enviando..."; }
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "Enviando...";
+    }
 
-    // Subir en simultáneo
-    const results = await Promise.all(uploadQueue.map(item => postOne(item.data)));
+    const results = await Promise.all(uploadQueue.map(item => postOne(item)));
     const ok = results.filter(Boolean).length;
     const fail = results.length - ok;
 
-    alert(`Listo: ${ok} enviada(s) correctamente${fail ? `, ${fail} falló/fallaron` : ""}.`);
+    alert(`Listo: ${ok} enviado(s) correctamente${fail ? `, ${fail} falló/fallaron` : ""}.`);
     finishScreen();
   }
 
@@ -368,11 +416,11 @@
      Inicio
   ========================== */
   startCamera();
-  // listeners por si el DOM tarda
   document.getElementById("fotoBtn")?.addEventListener("click", takePhoto);
-  document.getElementById("galleryBtn")?.addEventListener("click", () => picker.click());
+  document.getElementById("galleryBtn")?.addEventListener("click", () => {
+    picker.value = "";
+    picker.click();
+  });
 </script>
 </body>
 </html>
-
-
