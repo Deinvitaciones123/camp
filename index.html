@@ -9,57 +9,63 @@
   @import url('https://fonts.googleapis.com/css2?family=Hugs+and+Kisses&display=swap');
 
   /* ===== Estilos base ===== */
-  body{
+  body {
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 0;
     min-height: 100svh;
-    height: auto;
-    overflow: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     gap: clamp(10px, 3vw, 20px);
-    padding: clamp(10px, 3vw, 18px) clamp(10px, 3vw, 18px) calc(12px + env(safe-area-inset-bottom));
-    background-size: cover;
+    padding: 12px 10px calc(12px + env(safe-area-inset-bottom));
+    background: #fff;
   }
 
-  h2{
+  h2 {
     font-family: 'Aparajita', serif;
     color:#ad83b6;
-    font-size: clamp(24px, 6.5vw, 48px);
+    font-size: clamp(24px, 6vw, 48px);
     text-shadow: 0 0 5px #ffb3c1, 0 0 10px #ad83b6, 0 0 20px #ad83b6;
     margin: 6px 0 4px;
   }
 
-  /* Marco 4:3 */
-  .frame-43{
+  /* ===== Marco responsivo vertical ===== */
+  .frame-43 {
     position: relative;
-    width: min(100%, 720px);
-    aspect-ratio: 4 / 3;
+    width: min(100vw - 20px, 720px);
+    aspect-ratio: 3 / 4; /* más vertical */
     border-radius: clamp(16px, 4vw, 26px);
     border: 5px solid #ad83b6;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(151,134,99,.35), 0 0 20px #ad83b6, 0 0 40px #ffb3c1, 0 0 60px #ad83b6;
+    margin-inline: auto;
+    box-shadow: 0 8px 24px rgba(151,134,99,.35),
+                0 0 20px #ad83b6,
+                0 0 40px #ffb3c1,
+                0 0 60px #ad83b6;
+    background: #000;
   }
-  @supports not (aspect-ratio: 4/3){
-    .frame-43::before{ content:""; display:block; padding-top:75%; }
+
+  /* En pantallas grandes (modo horizontal o PC) mantenemos 4:3 */
+  @media (min-aspect-ratio: 4/3) {
+    .frame-43 {
+      aspect-ratio: 4 / 3;
+    }
   }
 
   .frame-43 > video,
-  .frame-43 > img{
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    border: 0 !important; box-shadow: none !important;
-  }
-  .frame-43 > img{
-    object-fit: contain;
-    background: transparent;
+  .frame-43 > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ocupa todo sin deformarse */
+    border: none !important;
+    box-shadow: none !important;
   }
 
-  /* Botones base */
+  /* ===== Botones ===== */
   #btnsContainer {
     display:flex;
     flex-direction: column;
@@ -68,7 +74,8 @@
     align-items:center;
     justify-content:center;
   }
-  #btnsContainer button{
+
+  #btnsContainer button {
     width: 100%;
     min-width: 160px;
     background: linear-gradient(45deg, #ad83b6 , #ad83b6, #ad83b6 );
@@ -86,13 +93,10 @@
     position: relative;
     overflow: hidden;
   }
-  #btnsContainer button:hover{
+
+  #btnsContainer button:hover {
     transform: scale(1.03);
     box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    *{ animation: none !important; }
   }
 
   @keyframes gradientBG {
@@ -101,15 +105,21 @@
     100%{background-position:0 50%}
   }
 
-  /* Miniaturas */
-  #thumbs{
+  @media (min-width: 768px) {
+    #btnsContainer { flex-direction: row; }
+    #btnsContainer button { width: auto; }
+  }
+
+  /* ===== Miniaturas ===== */
+  #thumbs {
     width: min(100%, 720px);
     display: none;
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 8px;
     margin-top: 6px;
   }
-  #thumbs .thumb{
+
+  #thumbs .thumb {
     width: 100%;
     aspect-ratio: 1/1;
     border-radius: 10px;
@@ -121,30 +131,22 @@
     background:#fff;
     overflow:hidden;
   }
-  #thumbs img{
+
+  #thumbs img {
     width:100%;
     height:100%;
     object-fit: cover;
-  }
-
-  @media (min-width: 768px){
-    #btnsContainer{ flex-direction: row; }
-    #btnsContainer button{ width: auto; }
   }
 </style>
 </head>
 <body>
   <h2>¡Gracias por acompañarnos!</h2>
 
-  <!-- Marco 4:3 -->
   <div id="previewBox" class="frame-43">
-    <!-- este video lo usamos para cámara o para mostrar un video de la galería -->
     <video id="video" autoplay playsinline></video>
-    <!-- este img solo para fotos -->
     <img id="preview" />
   </div>
 
-  <!-- Miniaturas -->
   <div id="thumbs"></div>
 
   <div id="btnsContainer">
@@ -153,15 +155,10 @@
     <button id="galleryBtn">Subir desde galería</button>
   </div>
 
-  <!-- Input oculto (ahora acepta imagen y video, y múltiples) -->
   <input id="picker" type="file" accept="image/*,video/*" multiple style="display:none" />
-
   <canvas id="canvas" style="display:none;"></canvas>
 
 <script>
-  /* =========================
-     Variables y estado
-  ========================== */
   const video = document.getElementById("video");
   const canvas = document.getElementById("canvas");
   const context = canvas.getContext("2d");
@@ -172,24 +169,15 @@
 
   let stream;
   let useFront = true;
-
-  // Cola de archivos a subir
-  // { filename, mime, data, isVideo }
   let uploadQueue = [];
 
-  // Tu endpoint
   const ENDPOINT = "https://script.google.com/macros/s/AKfycbxDKz3QJ8nVmrgRvwKOE66FOgV5CQoM55ZZHiYuXj3_MdrXtlw7Nk3ygMdFWhmKTotshA/exec";
 
-  /* =========================
-     Cámara
-  ========================== */
   async function startCamera() {
-    // Si había video de galería, lo limpiamos
     video.removeAttribute("src");
     video.removeAttribute("controls");
     if (typeof video.load === "function") video.load();
 
-    // Detener stream anterior
     if (stream) stream.getTracks().forEach(t => t.stop());
 
     try {
@@ -203,12 +191,10 @@
       return;
     }
 
-    // limpiar estado
     uploadQueue = [];
     thumbs.style.display = "none";
     thumbs.innerHTML = "";
 
-    // mostrar cámara
     video.srcObject = stream;
     video.style.display = "block";
     video.controls = false;
@@ -226,7 +212,6 @@
     document.getElementById("fotoBtn").onclick = takePhoto;
     document.getElementById("flipBtn").onclick = () => { useFront = !useFront; startCamera(); };
     document.getElementById("galleryBtn").onclick = () => {
-      // reset para que deje elegir lo mismo
       picker.value = "";
       picker.click();
     };
@@ -256,9 +241,6 @@
     renderReviewButtons();
   }
 
-  /* =========================
-     Galería (imágenes + videos)
-  ========================== */
   function readFileAsDataURL(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -272,7 +254,6 @@
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    // detener cámara si estaba activa
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 
     try {
@@ -284,10 +265,8 @@
         isVideo: f.type.startsWith("video/")
       }));
 
-      // mostrar preview del primero
       const first = uploadQueue[0];
       if (first.isVideo) {
-        // mostramos en el video
         preview.style.display = "none";
         video.style.display = "block";
         video.srcObject = null;
@@ -296,7 +275,6 @@
         video.loop = true;
         video.play().catch(()=>{});
       } else {
-        // es imagen
         video.style.display = "none";
         video.removeAttribute("src");
         if (typeof video.load === "function") video.load();
@@ -304,7 +282,6 @@
         preview.style.display = "block";
       }
 
-      // miniaturas
       if (uploadQueue.length > 1) {
         thumbs.innerHTML = uploadQueue.map(item => {
           if (item.isVideo) {
@@ -341,14 +318,12 @@
     document.getElementById("retakeBtn").onclick = () => startCamera();
   }
 
-  /* =========================
-     Subida
-  ========================== */
   async function postOne(item) {
     const payload = {
-      file: item.data,    // base64 dataURL
+      data: item.data,
+      image: item.data,
       name: item.filename,
-      type: item.mime,
+      mime: item.mime,
       isVideo: item.isVideo
     };
 
@@ -359,19 +334,8 @@
       });
       await res.text();
       return true;
-    } catch (err) {
-      // fallback
-      try {
-        await fetch(ENDPOINT, {
-          method: "POST",
-          mode: "no-cors",
-          body: JSON.stringify(payload)
-        });
-        return true;
-      } catch (e2) {
-        console.error("Fallo al enviar:", e2);
-        return false;
-      }
+    } catch {
+      return false;
     }
   }
 
@@ -380,6 +344,7 @@
       alert("No hay archivos para subir.");
       return;
     }
+
     const uploadBtn = document.getElementById("uploadBtn");
     if (uploadBtn) {
       uploadBtn.disabled = true;
@@ -404,23 +369,9 @@
         ¡Gracias! Tus archivos fueron enviados.
       </h1>
     `;
-    document.body.style.backgroundSize = "cover";
-    document.body.style.display = "flex";
-    document.body.style.justifyContent = "center";
-    document.body.style.alignItems = "center";
-    document.body.style.flexDirection = "column";
-    document.body.style.minHeight = "100vh";
   }
 
-  /* =========================
-     Inicio
-  ========================== */
   startCamera();
-  document.getElementById("fotoBtn")?.addEventListener("click", takePhoto);
-  document.getElementById("galleryBtn")?.addEventListener("click", () => {
-    picker.value = "";
-    picker.click();
-  });
 </script>
 </body>
 </html>
