@@ -150,9 +150,9 @@
 
   <div id="btnsContainer">
     <button id="fotoBtn">Tomar Foto</button>
-    <button id="flipBtn">Voltear Cámara</button>
     <button id="galleryBtn">Subir desde galería</button>
-  </div>
+    <button id="flipBtn">Voltear Cámara</button>
+  </div>  
 
   <input id="picker" type="file" accept="image/*,video/*" multiple style="display:none" />
   <canvas id="canvas" style="display:none;"></canvas>
@@ -203,18 +203,22 @@
   }
 
   function renderInitialButtons(){
-    btnsContainer.innerHTML = `
-      <button id="fotoBtn">Tomar Foto</button>
-      <button id="flipBtn">Voltear Cámara</button>
-      <button id="galleryBtn">Subir desde galería</button>
-    `;
-    document.getElementById("fotoBtn").onclick = takePhoto;
-    document.getElementById("flipBtn").onclick = () => { useFront = !useFront; startCamera(); };
-    document.getElementById("galleryBtn").onclick = () => {
-      picker.value = "";
-      picker.click();
-    };
-  }
+  btnsContainer.innerHTML = `
+    <button id="fotoBtn">Tomar Foto</button>
+    <button id="galleryBtn">Subir desde galería</button>
+    <button id="flipBtn">Voltear Cámara</button>
+  `;
+  document.getElementById("fotoBtn").onclick = takePhoto;
+  document.getElementById("galleryBtn").onclick = () => {
+    picker.value = "";
+    picker.click();
+  };
+  document.getElementById("flipBtn").onclick = () => { 
+    useFront = !useFront; 
+    startCamera(); 
+  };
+}
+
 
   function takePhoto() {
     if (!video.videoWidth) {
