@@ -20,12 +20,12 @@
     justify-content: flex-start;
     gap: clamp(10px, 3vw, 20px);
     padding: 12px 10px calc(12px + env(safe-area-inset-bottom));
-    background: #f7f0e6; /* beige claro de fondo */
+    background: #f7f0e6; /* beige claro */
   }
 
   h2 {
     font-family: 'Aparajita', serif;
-    color: #b58b5d; /* dorado/beige oscuro */
+    color: #b58b5d;
     font-size: clamp(24px, 6vw, 48px);
     text-shadow: 0 0 4px rgba(181,139,93,.25);
     margin: 6px 0 4px;
@@ -35,7 +35,7 @@
   .frame-43 {
     position: relative;
     width: min(100vw - 20px, 720px);
-    aspect-ratio: 3 / 4; /* más vertical */
+    aspect-ratio: 3 / 4;
     border-radius: clamp(16px, 4vw, 26px);
     border: 4px solid #d4b996;
     overflow: hidden;
@@ -43,14 +43,11 @@
     box-shadow:
       0 8px 24px rgba(90, 70, 42, .25),
       0 0 18px rgba(212,185,150,.25);
-    background: #000;
+    background: #fff7ec;
   }
 
-  /* En pantallas grandes (modo horizontal o PC) mantenemos 4:3 */
   @media (min-aspect-ratio: 4/3) {
-    .frame-43 {
-      aspect-ratio: 4 / 3;
-    }
+    .frame-43 { aspect-ratio: 4 / 3; }
   }
 
   .frame-43 > video,
@@ -59,7 +56,7 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* ocupa todo sin deformarse */
+    object-fit: cover;
     border: none !important;
     box-shadow: none !important;
   }
@@ -89,8 +86,6 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     animation: gradientBG 5s ease infinite;
-    position: relative;
-    overflow: hidden;
   }
 
   #btnsContainer button:hover {
@@ -152,7 +147,7 @@
     <button id="fotoBtn">Tomar Foto</button>
     <button id="galleryBtn">Subir desde galería</button>
     <button id="flipBtn">Voltear Cámara</button>
-  </div>  
+  </div>
 
   <input id="picker" type="file" accept="image/*,video/*" multiple style="display:none" />
   <canvas id="canvas" style="display:none;"></canvas>
@@ -203,22 +198,18 @@
   }
 
   function renderInitialButtons(){
-  btnsContainer.innerHTML = `
-    <button id="fotoBtn">Tomar Foto</button>
-    <button id="galleryBtn">Subir desde galería</button>
-    <button id="flipBtn">Voltear Cámara</button>
-  `;
-  document.getElementById("fotoBtn").onclick = takePhoto;
-  document.getElementById("galleryBtn").onclick = () => {
-    picker.value = "";
-    picker.click();
-  };
-  document.getElementById("flipBtn").onclick = () => { 
-    useFront = !useFront; 
-    startCamera(); 
-  };
-}
-
+    btnsContainer.innerHTML = `
+      <button id="fotoBtn">Tomar Foto</button>
+      <button id="galleryBtn">Subir desde galería</button>
+      <button id="flipBtn">Voltear Cámara</button>
+    `;
+    document.getElementById("fotoBtn").onclick = takePhoto;
+    document.getElementById("galleryBtn").onclick = () => {
+      picker.value = "";
+      picker.click();
+    };
+    document.getElementById("flipBtn").onclick = () => { useFront = !useFront; startCamera(); };
+  }
 
   function takePhoto() {
     if (!video.videoWidth) {
@@ -365,16 +356,27 @@
   function finishScreen() {
     if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
     document.body.innerHTML = `
-      <h1 style="
-        font-family: 'Aparajita', serif;
-        color: #b58b5d; 
-        font-size: clamp(28px, 7vw, 50px); 
-        text-align: center; 
-        margin: 10% 16px 0;">
+      <h1 style="font-family: 'Aparajita', serif; color: #b58b5d; font-size: clamp(28px, 7vw, 50px); text-align: center; margin: 10% 16px 20px;">
         ¡Gracias! Tus archivos fueron enviados.
       </h1>
+      <button id="backBtn" style="
+        background: linear-gradient(45deg, #d4b996, #b58b5d, #d4b996);
+        border: none;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        padding: 12px 28px;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        cursor: pointer;
+      ">
+        Regresar al menú principal
+      </button>
     `;
     document.body.style.background = "#f7f0e6";
+
+    // volver al menú principal
+    document.getElementById("backBtn").onclick = () => location.reload();
   }
 
   startCamera();
